@@ -52,12 +52,12 @@ export const Index = () => {
                 Challenge yourself with our number guessing game. Compete with other players and climb up the leaderboard.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                <Button size="lg" onClick={() => navigate("/register")} className="h-12 px-8">
+                <Button size="lg" onClick={() => navigate("/login")} className="h-12 px-8">
                   Get Started
                 </Button>
-                <Button variant="outline" size="lg" onClick={() => navigate("/login")} className="h-12 px-8">
+                {/* <Button variant="outline" size="lg" onClick={() => navigate("/login")} className="h-12 px-8">
                   I Already Have an Account
-                </Button>
+                </Button> */}
               </div>
             </motion.div>
             
