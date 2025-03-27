@@ -19,50 +19,57 @@ export const Index = () => {
     size: number;
     opacity: number;
   }>>([]);
+  const [explosions, setExplosions] = useState<Array<{
+    id: number;
+    x: number;
+    y: number;
+    color: string;
+  }>>([]);
 
   // Check if user is already logged in
   useEffect(() => {
-    const userData = Cookies.get('user');
+    const userData = Cookies.get("user");
     const user = userData ? JSON.parse(userData) : null;
     if (user) {
       navigate("/game");
     }
   }, [navigate]);
 
-  // Generate initial floating numbers
   useEffect(() => {
-    const nums = [];
-    const MAX_NUMBERS = 12; // Reduced from 15 to 12
-
+    const MAX_NUMBERS = 5;
+    // Generate initial floating numbers
+    const initialNumbers = [];
     for (let i = 0; i < MAX_NUMBERS; i++) {
-      nums.push({
+      initialNumbers.push({
         id: i,
         value: Math.floor(Math.random() * 100) + 1,
         x: Math.random() * 90 + 5, // Keep away from edges
         y: Math.random() * 90 + 5,
-        size: Math.random() * 1.2 + 0.8, // Slightly reduced size range
-        opacity: Math.random() * 0.3 + 0.7, // Increased minimum opacity
+        size: Math.random() * 1.2 + 0.8, // Size range
+        opacity: Math.random() * 0.3 + 0.7, // Opacity range
       });
     }
-    setFloatingNumbers(nums);
+    setFloatingNumbers(initialNumbers);
 
-    // Add new numbers periodically
+    // Add one new number every 3 seconds if count is less than MAX_NUMBERS
     const interval = setInterval(() => {
-      if (floatingNumbers.length < MAX_NUMBERS) {
-        setFloatingNumbers(prev => [
-          ...prev,
-          {
-            id: Date.now(),
-            value: Math.floor(Math.random() * 100) + 1,
-            x: Math.random() * 90 + 5,
-            y: Math.random() * 90 + 5,
-            size: Math.random() * 1.2 + 0.8,
-            opacity: Math.random() * 0.3 + 0.7,
-          }
-        ]);
-      }
-    }, 3000); // Increased interval from 2000ms to 3000ms
-
+      setFloatingNumbers((prev) => {
+        if (prev.length < MAX_NUMBERS) {
+          return [
+            ...prev,
+            {
+              id: Date.now(),
+              value: Math.floor(Math.random() * 100) + 1,
+              x: Math.random() * 90 + 5,
+              y: Math.random() * 90 + 5,
+              size: Math.random() * 1.2 + 0.8,
+              opacity: Math.random() * 0.3 + 0.7,
+            },
+          ];
+        }
+        return prev;
+      });
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -95,12 +102,39 @@ export const Index = () => {
     };
   }, []);
 
-  // Simple click handler
+  // Helper to get explosion color based on number value
+  const getExplosionColor = (value: number) => {
+    if (value < 33) return "bg-green-400";
+    else if (value < 66) return "bg-yellow-400";
+    else return "bg-pink-400";
+  };
+
+  // Handle floating number click
   const handleNumberClick = (id: number) => {
-    setScore(prevScore => prevScore + 1);
-    setFloatingNumbers(prevNumbers =>
-      prevNumbers.filter(num => num.id !== id)
-    );
+    const clickedNum = floatingNumbers.find((n) => n.id === id);
+    if (!clickedNum) return;
+
+    // Create explosion effect at the number's position
+    setExplosions((prev) => [
+      ...prev,
+      {
+        id: clickedNum.id,
+        x: clickedNum.x,
+        y: clickedNum.y,
+        color: getExplosionColor(clickedNum.value),
+      },
+    ]);
+
+    // Remove the floating number
+    setFloatingNumbers((prev) => prev.filter((num) => num.id !== id));
+
+    // Remove explosion after animation completes (800ms)
+    setTimeout(() => {
+      setExplosions((prev) => prev.filter((exp) => exp.id !== id));
+    }, 800);
+    
+    // Update score
+    setScore((prevScore) => prevScore + 1);
   };
 
   // Calculate positions based on mouse proximity
@@ -178,19 +212,65 @@ export const Index = () => {
         <div className="absolute inset-0 bg-grid-pattern opacity-10" />
       </div>
 
+      {/* Explosion Effects */}
+      <div className="absolute inset-0 pointer-events-none">
+        {explosions.map((exp) => (
+          <div
+            key={exp.id}
+            className="absolute"
+            style={{
+              left: `${exp.x}%`,
+              top: `${exp.y}%`,
+            }}
+          >
+            {Array.from({ length: 8 }).map((_, i) => {
+              const angle = Math.random() * 2 * Math.PI;
+              const distance = Math.random() * 50; // random offset in pixels
+              return (
+                <motion.div
+                  key={`${exp.id}-${i}`} // composite key to ensure uniqueness
+                  className={`${exp.color} rounded-full`}
+                  style={{
+                    width: "8px",
+                    height: "8px",
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                  }}
+                  initial={{
+                    x: 0,
+                    y: 0,
+                    opacity: 1,
+                    scale: 1,
+                  }}
+                  animate={{
+                    x: Math.cos(angle) * distance,
+                    y: Math.sin(angle) * distance,
+                    opacity: 0,
+                    scale: 0.5,
+                  }}
+                  transition={{
+                    duration: 0.8,
+                    ease: "easeOut",
+                  }}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+
       {/* Floating Numbers */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 z-20 pointer-events-none">
         {floatingNumbers.map((num) => {
           const pos = getNumberPosition(num);
-
           return (
             <motion.div
               key={num.id}
-              className="absolute cursor-pointer"
+              className="absolute cursor-pointer pointer-events-auto" // each number remains clickable
               style={{
                 left: `${num.x}%`,
                 top: `${num.y}%`,
-                zIndex: 5,
               }}
               animate={{
                 left: `${pos.x}%`,
@@ -198,9 +278,9 @@ export const Index = () => {
               }}
               transition={{
                 type: "spring",
-                damping: 10,      // Lower damping for less sluggish movement
-                stiffness: 300,   // Higher stiffness for a faster transition
-                mass: 0.4,        // Lower mass for a quicker response
+                damping: 10,
+                stiffness: 300,
+                mass: 0.4,
               }}
               onClick={() => handleNumberClick(num.id)}
             >
