@@ -1,8 +1,12 @@
+# Basic robots.txt for Guess The Number Game
+
 User-agent: Googlebot
 Allow: /
+Crawl-delay: 5
 
-User-agent: Bingbot
+User-agent: Bingbot  
 Allow: /
+Crawl-delay: 5
 
 User-agent: Twitterbot
 Allow: /
@@ -10,5 +14,15 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+# Default rules for all other bots
 User-agent: *
 Allow: /
+Disallow: /private/
+Disallow: /admin/
+Crawl-delay: 10
+
+# Sitemap location
+Sitemap: https://yourdomain.com/sitemap.xml
+
+# Preferred host (remove if using HTTPS)
+Host: yourdomain.com

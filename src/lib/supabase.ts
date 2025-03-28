@@ -1,6 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
 import Cookies from 'js-cookie';
 
+// Add RPC function for purchasing points
+export const addPurchasedPoints = async (user_id: string, points_amount: number) => {
+  const { data, error } = await supabase.rpc('add_purchased_points', {
+    user_id,
+    points_amount
+  });
+  return { data, error };
+};
+
 export const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY,
